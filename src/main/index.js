@@ -12,7 +12,20 @@ const settings = require('./settings');
 
 const isDev = process.argv.includes('--dev');
 
+// Enforce single instance — focus existing window if already running
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+  process.exit(0);
+}
+
 let mainWindow;
+
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -39,6 +52,33 @@ function createWindow() {
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 }
+
+// Restrict webview navigation to AWS domains only.
+// Any link that tries to leave AWS opens in the real browser instead.
+const AWS_ORIGIN = /^https:\/\/([\w-]+\.)?(amazonaws\.com|aws\.amazon\.com|console\.aws\.amazon\.com|signin\.aws\.amazon\.com|awsapps\.com)(\/|$)/;
+
+app.on('web-contents-created', (_e, contents) => {
+  if (contents.getType() === 'webview') {
+    contents.on('will-navigate', (event, url) => {
+      if (!AWS_ORIGIN.test(url)) {
+        event.preventDefault();
+        shell.openExternal(url);
+      }
+    });
+    // Block new windows from opening inside the webview
+    contents.setWindowOpenHandler(({ url }) => {
+      if (AWS_ORIGIN.test(url)) return { action: 'allow' };
+      shell.openExternal(url);
+      return { action: 'deny' };
+    });
+  }
+  // Prevent the main window itself from navigating away from the local file
+  if (contents.getType() === 'mainFrame') {
+    contents.on('will-navigate', (event) => {
+      event.preventDefault();
+    });
+  }
+});
 
 app.whenReady().then(async () => {
   await awsAuth.restoreSession();

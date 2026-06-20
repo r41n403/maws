@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-ELECTRON_VERSION="30.5.1"
+ELECTRON_VERSION="42.4.1"
 DIST_DIR="node_modules/electron/dist"
 ARCH=$(uname -m)
 

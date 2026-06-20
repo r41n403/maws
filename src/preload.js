@@ -18,8 +18,19 @@ contextBridge.exposeInMainWorld('aws', {
   // Features
   listFeatures: () => ipcRenderer.invoke('features:list'),
 
-  // Generic IPC invoke — for feature modules to call their own handlers
-  invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
+  // Generic IPC invoke — for feature modules to call their own handlers.
+  // Channel must start with a known prefix to prevent renderer XSS from
+  // calling arbitrary main-process handlers.
+  invoke: (channel, ...args) => {
+    const allowed = [
+      'auth:', 'features:', 'health:', 'audit:', 'shell:',
+      'billing:', 'util:', 'settings:', 'lock:',
+      'arn-scratchpad:', 'resource-lister:',
+    ];
+    if (!allowed.some(p => channel.startsWith(p)))
+      throw new Error(`Blocked IPC channel: ${channel}`);
+    return ipcRenderer.invoke(channel, ...args);
+  },
 
   // Health
   healthGetStatus: () => ipcRenderer.invoke('health:get-status'),
