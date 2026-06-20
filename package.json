@@ -24,7 +24,7 @@
     "keytar": "^7.9.0"
   },
   "devDependencies": {
-    "electron": "^39.8.5",
+    "electron": "^39.8.10",
     "electron-builder": "^26.15.3"
   },
   "allowScripts": {
