@@ -12,8 +12,7 @@ files:
 
 mac:
   category: public.app-category.developer-tools
-  icon: assets/icon.icns
-  # For personal use — no code signing required.
+  # No code signing — personal use only.
   # Users: right-click the app → Open to bypass Gatekeeper on first run.
   identity: null
   hardenedRuntime: false
@@ -21,7 +20,6 @@ mac:
 
 dmg:
   title: "Maws ${version}"
-  icon: assets/icon.icns
   contents:
     - x: 130
       y: 220

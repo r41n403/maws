@@ -27,12 +27,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        # Skip postinstall (electron-rebuild) here — we run it explicitly below
-        run: npm ci --ignore-scripts
-
-      # Rebuild keytar against Electron's Node ABI
-      - name: Rebuild native modules for Electron
-        run: ./node_modules/.bin/electron-rebuild -f -w keytar
+        run: npm ci
 
       # ── Build DMG ────────────────────────────────────────────────────────
       # No code signing — personal use only.

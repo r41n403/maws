@@ -8,6 +8,7 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
+    "postinstall": "electron-builder install-app-deps",
 
     "build": "electron-builder --mac dmg",
     "build:dir": "electron-builder --mac dir"
@@ -24,8 +25,7 @@
   },
   "devDependencies": {
     "electron": "^30.5.1",
-    "electron-builder": "^24.13.3",
-    "@electron/rebuild": "^3.6.0"
+    "electron-builder": "^24.13.3"
   },
   "allowScripts": {
     "electron@30.5.1": true,
