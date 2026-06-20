@@ -1,0 +1,39 @@
+appId: com.r41n403.maws
+productName: Maws
+copyright: Copyright © 2026 r41n403
+
+directories:
+  output: dist
+
+files:
+  - src/**/*
+  - package.json
+  - "!node_modules/**/{CHANGELOG.md,README.md,readme.md,test,__tests__,tests,powered-test,example,examples,.nyc_output}"
+
+mac:
+  category: public.app-category.developer-tools
+  icon: assets/icon.icns
+  # For personal use — no code signing required.
+  # Users: right-click the app → Open to bypass Gatekeeper on first run.
+  identity: null
+  hardenedRuntime: false
+  gatekeeperAssess: false
+
+dmg:
+  title: "Maws ${version}"
+  icon: assets/icon.icns
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+nsis:
+  oneClick: false
+
+publish:
+  provider: github
+  owner: r41n403
+  repo: maws

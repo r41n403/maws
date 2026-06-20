@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-src https:;" />
+  <title>Maws</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+      <div id="sidebar-header">
+        <div id="logo">
+          <span id="logo-icon">☁️</span>
+          <span id="logo-text">Maws</span>
+          <span id="health-dot-wrap">
+            <span id="health-dot" class="health-unknown"></span>
+          </span>
+        </div>
+        <div id="utc-clock">
+          <span id="utc-date"></span>
+          <span id="utc-time"></span>
+          <span id="utc-label">UTC</span>
+        </div>
+        <div id="identity-badge" class="hidden">
+          <div id="identity-account"></div>
+          <div id="identity-role"></div>
+          <div id="identity-cost" class="hidden"></div>
+        </div>
+      </div>
+
+      <div id="nav-section-label">WORKSPACE</div>
+      <ul id="nav-list">
+        <li class="nav-item active" data-view="auth">
+          <span class="nav-icon">🔑</span>
+          <span class="nav-label">Authentication</span>
+        </li>
+        <li class="nav-item" data-view="console">
+          <span class="nav-icon">🌐</span>
+          <span class="nav-label">AWS Console</span>
+        </li>
+        <li class="nav-item" data-view="cloudshell">
+          <span class="nav-icon">💻</span>
+          <span class="nav-label">CloudShell</span>
+        </li>
+        <!-- Feature nav items injected here -->
+      </ul>
+
+      <div id="nav-section-label" style="margin-top:8px">SYSTEM</div>
+      <ul id="nav-list-system" style="list-style:none;padding:0 8px;">
+        <li class="nav-item" data-view="audit">
+          <span class="nav-icon">📋</span>
+          <span class="nav-label">Audit Log</span>
+        </li>
+        <li class="nav-item" data-view="settings">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">Settings</span>
+        </li>
+      </ul>
+
+      <div id="sidebar-footer">
+        <button id="logout-btn" class="hidden">Sign Out</button>
+        <div id="public-ip" title="Click to copy">
+          <span id="public-ip-label">MY IP</span>
+          <span id="public-ip-value">…</span>
+        </div>
+        <div id="version-row">
+          <div id="version-label"></div>
+          <button id="donate-btn" title="Buy me a coffee ☕">☕ Donate</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main content -->
+    <main id="content">
+      <!-- Auth view -->
+      <section id="view-auth" class="view active">
+        <div id="auth-container">
+          <h1>Connect to AWS</h1>
+          <p class="subtitle">Choose how you'd like to authenticate. SSO is strongly recommended — no long-lived credentials stored on disk.</p>
+
+          <div id="profile-picker">
+            <label for="profile-select">AWS Profile</label>
+            <select id="profile-select">
+              <option value="">Loading profiles…</option>
+            </select>
+            <div id="profile-type-hint"></div>
+          </div>
+
+          <div id="auth-buttons">
+            <button id="btn-sso" class="btn btn-primary" disabled>
+              <span>🔐</span> Login with SSO
+              <small>Recommended</small>
+            </button>
+            <div class="divider">or</div>
+            <button id="btn-profile" class="btn btn-secondary" disabled>
+              <span>🗂</span> Use Profile Credentials
+            </button>
+          </div>
+
+          <div id="auth-status" class="hidden">
+            <div id="auth-spinner" class="spinner"></div>
+            <span id="auth-status-text">Authenticating…</span>
+          </div>
+
+          <div id="auth-error" class="hidden error-box"></div>
+        </div>
+
+        <!-- Access key setup panel -->
+        <div id="key-setup-wrap">
+          <button id="key-setup-toggle">🗝 Set up an access key profile</button>
+          <div id="key-setup-panel" class="hidden">
+            <p class="sso-setup-hint">
+              Create an IAM user with programmatic access in the AWS Console, then paste the credentials below.
+              <strong>Avoid using root account keys.</strong>
+            </p>
+            <div class="sso-setup-field">
+              <label>Profile name</label>
+              <input id="key-profile-name" type="text" placeholder="e.g. my-iam-user" />
+            </div>
+            <div class="sso-setup-field">
+              <label>Access Key ID <span class="required">*</span></label>
+              <input id="key-access-key-id" type="text" placeholder="AKIAIOSFODNN7EXAMPLE" spellcheck="false" autocomplete="off" />
+            </div>
+            <div class="sso-setup-field">
+              <label>Secret Access Key <span class="required">*</span></label>
+              <input id="key-secret-key" type="password" placeholder="••••••••••••••••••••••••••••••••••••••••" autocomplete="off" />
+            </div>
+            <div class="sso-setup-field">
+              <label>Default region <span class="field-hint">(optional)</span></label>
+              <input id="key-region" type="text" placeholder="us-east-1" />
+            </div>
+            <div id="key-setup-error" class="hidden error-box"></div>
+            <div id="key-setup-success" class="hidden success-box"></div>
+            <button id="key-setup-save" class="btn btn-primary btn-sm" style="margin-top:4px;width:100%">Save profile &amp; reload</button>
+          </div>
+        </div>
+
+        <!-- SSO setup panel -->
+        <div id="sso-setup-wrap">
+          <button id="sso-setup-toggle">⚙ Set up an SSO profile</button>
+          <div id="sso-setup-panel" class="hidden">
+            <p class="sso-setup-hint">
+              You'll need your <strong>IAM Identity Center start URL</strong> — find it in the AWS Console under
+              <em>IAM Identity Center → Settings → AWS access portal URL</em>.
+            </p>
+            <div class="sso-setup-field">
+              <label>Profile name</label>
+              <input id="sso-profile-name" type="text" placeholder="e.g. my-company" value="default" />
+            </div>
+            <div class="sso-setup-field">
+              <label>SSO start URL <span class="required">*</span></label>
+              <input id="sso-start-url" type="text" placeholder="https://xxx.awsapps.com/start" />
+            </div>
+            <div class="sso-setup-field">
+              <label>SSO region <span class="required">*</span> <span class="field-hint">(where IAM Identity Center is hosted)</span></label>
+              <input id="sso-region" type="text" placeholder="us-east-1" />
+            </div>
+            <div class="sso-setup-field">
+              <label>Default region <span class="field-hint">(for API calls, optional)</span></label>
+              <input id="sso-default-region" type="text" placeholder="us-east-1" />
+            </div>
+            <div id="sso-setup-error" class="hidden error-box"></div>
+            <div id="sso-setup-success" class="hidden success-box"></div>
+            <button id="sso-setup-save" class="btn btn-primary btn-sm" style="margin-top:4px;width:100%">Save profile &amp; reload</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Identity / home view (shown after auth) -->
+      <section id="view-home" class="view hidden">
+        <div class="view-header">
+          <h2>Dashboard</h2>
+        </div>
+        <div id="identity-cards">
+          <div class="card">
+            <div class="card-label">Account ID</div>
+            <div class="card-value" id="card-account"></div>
+          </div>
+          <div class="card">
+            <div class="card-label">Identity ARN</div>
+            <div class="card-value monospace" id="card-arn"></div>
+          </div>
+          <div class="card">
+            <div class="card-label">Region</div>
+            <div class="card-value" id="card-region"></div>
+          </div>
+          <div class="card">
+            <div class="card-label">Auth Method</div>
+            <div class="card-value" id="card-method"></div>
+          </div>
+          <div class="card card-cost">
+            <div class="card-label">Month-to-date Cost</div>
+            <div class="card-value" id="card-cost">Loading…</div>
+          </div>
+        </div>
+        <div class="hint-box">
+          <strong>Adding features</strong> — drop a new folder in <code>src/features/</code> with an <code>index.js</code>, restart the app, and it appears in the sidebar automatically. See the README for the template.
+        </div>
+      </section>
+
+      <!-- Audit Log viewer -->
+      <section id="view-audit" class="view hidden">
+        <div class="view-header" style="display:flex;align-items:center;justify-content:space-between;">
+          <h2>📋 Audit Log</h2>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span id="audit-info" style="font-size:11px;color:var(--text-muted)"></span>
+            <button class="btn btn-secondary btn-sm" id="audit-export-csv">Export CSV</button>
+            <button class="btn btn-secondary btn-sm" id="audit-export-json">Export JSON</button>
+            <button class="btn btn-primary btn-sm" id="audit-refresh">Refresh</button>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div id="audit-filters">
+          <input id="audit-search" type="text" placeholder="Search events, ARNs, accounts…" />
+          <select id="audit-filter-category">
+            <option value="">All Categories</option>
+            <option value="auth">Auth</option>
+            <option value="feature">Feature</option>
+            <option value="console">Console</option>
+            <option value="system">System</option>
+          </select>
+          <select id="audit-filter-result">
+            <option value="">All Results</option>
+            <option value="success">Success</option>
+            <option value="failure">Failure</option>
+            <option value="info">Info</option>
+          </select>
+        </div>
+
+        <!-- Table -->
+        <div id="audit-table-wrap">
+          <table class="feature-table" id="audit-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Category</th>
+                <th>Event</th>
+                <th>Message</th>
+                <th>Account</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody id="audit-tbody">
+              <tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:24px">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Detail drawer -->
+        <div id="audit-detail" class="hidden">
+          <div id="audit-detail-header">
+            <strong id="audit-detail-event"></strong>
+            <button id="audit-detail-close">✕</button>
+          </div>
+          <pre id="audit-detail-body"></pre>
+        </div>
+      </section>
+
+      <!-- AWS Console embedded browser -->
+      <section id="view-console" class="view hidden console-view">
+        <div id="console-toolbar">
+          <button id="console-back" class="console-btn" title="Back">‹</button>
+          <button id="console-forward" class="console-btn" title="Forward">›</button>
+          <button id="console-refresh" class="console-btn" title="Refresh">↻</button>
+          <div id="console-url-bar">
+            <span id="console-url-text">console.aws.amazon.com</span>
+          </div>
+          <button id="console-home" class="console-btn" title="AWS Console Home">🏠</button>
+          <button id="console-popout" class="console-btn" title="Open in browser">⬡</button>
+        </div>
+        <div id="console-loading-bar" class="hidden"></div>
+        <webview
+          id="console-webview"
+          src="https://console.aws.amazon.com"
+          allowpopups
+          useragent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        ></webview>
+      </section>
+
+      <!-- Settings view -->
+      <section id="view-settings" class="view hidden">
+        <div class="view-header"><h2>⚙️ Settings</h2></div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">App Lock</div>
+
+          <div class="settings-row">
+            <div class="settings-row-label">
+              <span>Lock on launch</span>
+              <span class="settings-row-hint">Require authentication every time Maws opens</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="lock-enabled-toggle" />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+
+          <div id="lock-options" class="hidden">
+            <div class="settings-row">
+              <div class="settings-row-label">
+                <span>Method</span>
+              </div>
+              <div class="settings-method-btns">
+                <button class="method-btn active" id="method-touchid" data-method="touchid">Touch ID</button>
+                <button class="method-btn" id="method-password" data-method="password">Password</button>
+              </div>
+            </div>
+
+            <div class="settings-row">
+              <div class="settings-row-label">
+                <span>Auto-lock after</span>
+                <span class="settings-row-hint">Lock if Maws is inactive for this long</span>
+              </div>
+              <select id="lock-timeout-select" class="settings-select">
+                <option value="0">Launch only</option>
+                <option value="5">5 minutes</option>
+                <option value="15">15 minutes</option>
+                <option value="30">30 minutes</option>
+                <option value="60">1 hour</option>
+              </select>
+            </div>
+
+            <div id="password-setup-wrap" class="hidden">
+              <div class="settings-subsection">
+                <div class="settings-subsection-title">Set Password</div>
+                <div class="sso-setup-field">
+                  <label>New password</label>
+                  <input id="new-password" type="password" placeholder="At least 4 characters" autocomplete="new-password" />
+                </div>
+                <div class="sso-setup-field">
+                  <label>Confirm password</label>
+                  <input id="confirm-password" type="password" placeholder="Repeat password" autocomplete="new-password" />
+                </div>
+                <div id="password-error" class="hidden error-box" style="margin-top:8px"></div>
+                <div id="password-success" class="hidden success-box" style="margin-top:8px"></div>
+                <button id="save-password-btn" class="btn btn-primary btn-sm" style="margin-top:10px">Set Password</button>
+              </div>
+              <p class="settings-warning">⚠ If you forget your password, delete <code>~/Library/Application Support/maws/settings.json</code> to reset.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CloudShell embedded terminal -->
+      <section id="view-cloudshell" class="view hidden console-view">
+        <div id="cloudshell-toolbar">
+          <span id="cloudshell-title">☁️ AWS CloudShell</span>
+          <div id="cloudshell-toolbar-actions">
+            <button id="cloudshell-refresh" class="console-btn" title="Refresh">↻</button>
+            <button id="cloudshell-popout" class="console-btn" title="Open in browser">⬡</button>
+          </div>
+        </div>
+        <div id="cloudshell-loading-bar" class="hidden"></div>
+        <webview
+          id="cloudshell-webview"
+          src="https://console.aws.amazon.com/cloudshell/home"
+          allowpopups
+          useragent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        ></webview>
+      </section>
+
+      <!-- Feature views injected here dynamically -->
+    </main>
+  </div>
+
+  <div id="health-tooltip"></div>
+
+  <!-- Lock screen overlay -->
+  <div id="lock-screen" class="hidden">
+    <div id="lock-content">
+      <div id="lock-icon">☁️</div>
+      <div id="lock-title">Maws</div>
+      <div id="lock-subtitle">Locked</div>
+      <button id="lock-touchid-btn" class="btn btn-primary hidden">Touch ID to Unlock</button>
+      <div id="lock-password-wrap" class="hidden">
+        <input id="lock-password-input" type="password" placeholder="Enter password" autocomplete="current-password" />
+        <button id="lock-submit-btn" class="btn btn-primary">Unlock</button>
+      </div>
+      <div id="lock-error" class="hidden error-box"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

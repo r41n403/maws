@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+out/
+*.dmg
+*.pkg
+*.zip
+*.asar
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log
+
+# Environment / secrets — never commit these
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.p8
+*.pfx
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test artefacts
+coverage/
+.nyc_output/
+
+# NOTE: All runtime data (session, settings, audit log, ARN scratchpad) is stored
+# in ~/Library/Application Support/maws/ — outside this repo, never committed.
+# AWS credentials live in ~/.aws/ — also outside this repo.
