@@ -30,10 +30,15 @@ Authenticate once via SSO or IAM profile, then access the AWS Console, CloudShel
 ### Download (recommended)
 
 1. Go to [**Releases**](https://github.com/r41n403/maws/releases)
-2. Download the latest `Maws-x.x.x.dmg`
+2. Download the latest `Maws-x.x.x-arm64.dmg`
 3. Open the DMG and drag Maws to Applications
-4. **First launch:** right-click the app → **Open** → confirm  
-   *(Required because the app is not notarized — it is open-source and you can verify the code yourself)*
+4. Run this once in Terminal to clear the quarantine flag:
+   ```bash
+   xattr -cr /Applications/Maws.app
+   ```
+5. Open Maws normally
+
+> macOS shows "damaged and can't be opened" for unsigned apps downloaded from the internet. The app is fine — the command above removes the quarantine attribute. You can verify the source code yourself before running it.
 
 ### Build from source
 
