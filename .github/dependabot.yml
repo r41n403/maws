@@ -5,9 +5,10 @@ updates:
     schedule:
       interval: weekly
     ignore:
-      # Electron major version bumps are breaking changes — update manually
+      # Electron major version bumps require manual testing — update deliberately
       - dependency-name: electron
         update-types: ["version-update:semver-major"]
+        versions: [">=43.0.0"]
     groups:
       aws-sdk:
         patterns:
