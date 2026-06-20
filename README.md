@@ -9,6 +9,25 @@ Authenticate once via SSO or IAM profile, then access the AWS Console, CloudShel
 
 ---
 
+## Screenshots
+
+<p align="center">
+  <img src="assets/screenshots/auth.png" width="780" alt="Authentication screen" />
+  <br/><em>SSO login with IAM Identity Center — no long-lived credentials</em>
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/dashboard.png" width="780" alt="Dashboard" />
+  <br/><em>Dashboard — account info, identity ARN, and month-to-date cost</em>
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/arn-scratchpad.png" width="780" alt="ARN Scratchpad" />
+  <br/><em>ARN Scratchpad — save, label, and one-click copy frequently used ARNs</em>
+</p>
+
+---
+
 ## Features
 
 - **SSO login** via AWS IAM Identity Center — no long-lived credentials stored
