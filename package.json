@@ -8,7 +8,7 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "postinstall": "electron-rebuild -f -w keytar",
+
     "build": "electron-builder --mac dmg",
     "build:dir": "electron-builder --mac dir"
   },
