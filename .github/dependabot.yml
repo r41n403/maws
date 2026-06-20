@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    ignore:
+      # Electron major version bumps are breaking changes — update manually
+      - dependency-name: electron
+        update-types: ["version-update:semver-major"]
+    groups:
+      aws-sdk:
+        patterns:
+          - "@aws-sdk/*"
