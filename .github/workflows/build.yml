@@ -32,6 +32,9 @@ jobs:
       - name: Audit dependencies
         run: npm audit --audit-level=high
 
+      - name: Run tests
+        run: npm test
+
       # ── Build DMG ────────────────────────────────────────────────────────
       # No code signing — personal use only.
       # First launch: right-click the .app → Open to bypass Gatekeeper.
