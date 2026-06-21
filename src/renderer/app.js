@@ -399,8 +399,10 @@ function onAuthenticated(s) {
   document.getElementById('card-region').textContent = s.region || '—';
   document.getElementById('card-method').textContent = s.method === 'sso' ? '🔐 IAM Identity Center (SSO)' : '🗂 Profile Credentials';
 
-  // Fetch and display current month cost
+  // Fetch and display current month cost, then refresh every 20 minutes
   loadCurrentCost();
+  if (window._costRefreshInterval) clearInterval(window._costRefreshInterval);
+  window._costRefreshInterval = setInterval(loadCurrentCost, 20 * 60 * 1000);
 
   // Federate API credentials into a web console session so the Console
   // and CloudShell webviews don't show the sign-in page
@@ -415,6 +417,10 @@ function onAuthenticated(s) {
 }
 
 function onLoggedOut() {
+  if (window._costRefreshInterval) {
+    clearInterval(window._costRefreshInterval);
+    window._costRefreshInterval = null;
+  }
   document.getElementById('identity-badge').classList.add('hidden');
   document.getElementById('logout-btn').classList.add('hidden');
   document.querySelector('.nav-item[data-view="auth"]').classList.remove('hidden');
@@ -462,20 +468,33 @@ function buildFeatureView(feature) {
       <div class="view-header">
         <h2>${feature.icon} ${feature.name}</h2>
       </div>
-      <div class="feature-toolbar">
-        <button class="btn btn-primary btn-sm" id="resource-lister-refresh">Refresh</button>
-        <span id="resource-lister-count" style="color:var(--text-muted);font-size:12px;"></span>
+      <div class="feature-toolbar" style="flex-wrap:wrap;gap:6px;">
+        <button class="btn btn-sm rl-type-btn active" data-type="s3">🪣 S3</button>
+        <button class="btn btn-sm rl-type-btn" data-type="ec2">🖥 EC2</button>
+        <button class="btn btn-sm rl-type-btn" data-type="rds">🗄 RDS</button>
+        <button class="btn btn-sm rl-type-btn" data-type="albs">⚖️ ALBs</button>
+        <button class="btn btn-sm rl-type-btn" data-type="asg">📈 Auto Scaling</button>
+        <button class="btn btn-sm rl-type-btn" data-type="cloudfront">☁️ CloudFront</button>
+        <button class="btn btn-sm rl-type-btn" data-type="dynamodb">🗃 DynamoDB</button>
+        <button class="btn btn-sm rl-type-btn" data-type="sns">📣 SNS</button>
+        <button class="btn btn-sm rl-type-btn" data-type="iam-roles">🧑‍💼 IAM Roles</button>
+        <button class="btn btn-sm rl-type-btn" data-type="security-groups">🔒 Security Groups</button>
+        <button class="btn btn-sm rl-type-btn" data-type="vpcs">🌐 VPCs</button>
+        <button class="btn btn-sm rl-type-btn" data-type="acm">📜 ACM Certs</button>
+        <span style="flex:1"></span>
+        <span id="resource-lister-count" style="color:var(--text-muted);font-size:12px;align-self:center;"></span>
       </div>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
         <table class="feature-table">
           <thead>
             <tr>
-              <th>Bucket Name</th>
-              <th>Created</th>
+              <th>Name / ID</th>
+              <th>Details</th>
+              <th style="width:180px">Actions</th>
             </tr>
           </thead>
           <tbody id="resource-lister-tbody">
-            <tr><td colspan="2" style="color:var(--text-muted)">Click Refresh to load buckets.</td></tr>
+            <tr><td colspan="3" style="color:var(--text-muted)">Select a resource type above.</td></tr>
           </tbody>
         </table>
       </div>
@@ -502,6 +521,81 @@ function buildFeatureView(feature) {
     `;
   }
 
+  if (feature.id === 'route53') {
+    return `
+      <div class="view-header">
+        <h2>${feature.icon} ${feature.name}</h2>
+      </div>
+      <div id="r53-layout">
+        <div id="r53-zones-panel">
+          <div class="r53-panel-header">
+            <span>Hosted Zones</span>
+            <button class="btn btn-sm" id="r53-refresh-zones">Refresh</button>
+          </div>
+          <div id="r53-zones-list"><div class="r53-empty">Click Refresh to load zones.</div></div>
+        </div>
+        <div id="r53-records-panel">
+          <div class="r53-panel-header">
+            <span id="r53-zone-title" style="color:var(--text-muted)">Select a zone</span>
+            <span id="r53-record-count" style="font-size:11px;color:var(--text-muted)"></span>
+          </div>
+          <div id="r53-records-list"><div class="r53-empty">Select a hosted zone to view its records.</div></div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (feature.id === 'timestamp-converter') {
+    return `
+      <div class="view-header">
+        <h2>${feature.icon} ${feature.name}</h2>
+      </div>
+      <div id="ts-converter">
+        <div id="ts-input-row">
+          <input id="ts-input" type="text" placeholder="2024-08-22T03:53:07.298Z  or  1724291587" spellcheck="false" autocomplete="off" />
+          <button class="btn btn-sm" id="ts-clear">Clear</button>
+          <button class="btn btn-sm" id="ts-now">Now</button>
+        </div>
+        <div id="ts-error" class="hidden"></div>
+        <div id="ts-results" class="hidden">
+          <div class="ts-row" id="ts-row-local">
+            <span class="ts-label">Local Time</span>
+            <span class="ts-value" id="ts-local"></span>
+            <button class="ts-copy-btn">Copy</button>
+          </div>
+          <div class="ts-row" id="ts-row-utc">
+            <span class="ts-label">UTC</span>
+            <span class="ts-value" id="ts-utc"></span>
+            <button class="ts-copy-btn">Copy</button>
+          </div>
+          <div class="ts-row" id="ts-row-iso">
+            <span class="ts-label">ISO 8601</span>
+            <span class="ts-value" id="ts-iso"></span>
+            <button class="ts-copy-btn">Copy</button>
+          </div>
+          <div class="ts-row" id="ts-row-unix">
+            <span class="ts-label">Unix (seconds)</span>
+            <span class="ts-value" id="ts-unix"></span>
+            <button class="ts-copy-btn">Copy</button>
+          </div>
+          <div class="ts-row" id="ts-row-unix-ms">
+            <span class="ts-label">Unix (ms)</span>
+            <span class="ts-value" id="ts-unix-ms"></span>
+            <button class="ts-copy-btn">Copy</button>
+          </div>
+          <div class="ts-row" id="ts-row-relative">
+            <span class="ts-label">Relative</span>
+            <span class="ts-value" id="ts-relative"></span>
+          </div>
+          <div class="ts-row" id="ts-row-tz">
+            <span class="ts-label">Timezone</span>
+            <span class="ts-value" id="ts-tz"></span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   // Default generic view for unknown features
   return `
     <div class="view-header">
@@ -516,33 +610,105 @@ function buildFeatureView(feature) {
 
 function bindFeatureActions(feature, section) {
   if (feature.id === 'resource-lister') {
-    section.querySelector('#resource-lister-refresh').addEventListener('click', async () => {
+    const RESOURCE_TYPES = {
+      's3':              { label: 'S3 bucket',             ipc: 'resource-lister:list-s3' },
+      'ec2':             { label: 'EC2 instance',          ipc: 'resource-lister:list-ec2' },
+      'rds':             { label: 'RDS instance',          ipc: 'resource-lister:list-rds' },
+      'albs':            { label: 'load balancer',         ipc: 'resource-lister:list-albs' },
+      'asg':             { label: 'Auto Scaling group',    ipc: 'resource-lister:list-asg' },
+      'cloudfront':      { label: 'CloudFront distribution', ipc: 'resource-lister:list-cloudfront' },
+      'dynamodb':        { label: 'DynamoDB table',        ipc: 'resource-lister:list-dynamodb' },
+      'sns':             { label: 'SNS topic',             ipc: 'resource-lister:list-sns' },
+      'iam-roles':       { label: 'IAM role',              ipc: 'resource-lister:list-iam-roles' },
+      'security-groups': { label: 'security group',        ipc: 'resource-lister:list-security-groups' },
+      'vpcs':            { label: 'VPC',                   ipc: 'resource-lister:list-vpcs' },
+      'acm':             { label: 'ACM certificate',       ipc: 'resource-lister:list-acm' },
+    };
+
+    let activeType = 's3';
+
+    async function loadResourceType(type) {
+      activeType = type;
       const tbody = section.querySelector('#resource-lister-tbody');
       const count = section.querySelector('#resource-lister-count');
-      tbody.innerHTML = '<tr><td colspan="2"><div class="spinner" style="margin:8px auto"></div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="3"><div class="spinner" style="margin:8px auto"></div></td></tr>';
       count.textContent = '';
 
-      const result = await window.aws.invoke('resource-lister:list-buckets');
+      const { label, ipc } = RESOURCE_TYPES[type];
+      const result = await window.aws.invoke(ipc);
+
       if (!result.ok) {
-        tbody.innerHTML = `<tr><td colspan="2" style="color:var(--error)">${result.error}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="3" style="color:var(--error)">${result.error}</td></tr>`;
         return;
       }
-      if (!result.buckets.length) {
-        tbody.innerHTML = '<tr><td colspan="2" style="color:var(--text-muted)">No buckets found.</td></tr>';
+      if (!result.resources.length) {
+        tbody.innerHTML = `<tr><td colspan="3" style="color:var(--text-muted)">No ${label}s found in this region.</td></tr>`;
         return;
       }
-      count.textContent = `${result.buckets.length} bucket${result.buckets.length !== 1 ? 's' : ''}`;
-      tbody.innerHTML = result.buckets
-        .map(
-          (b) =>
-            `<tr><td>${b.name}</td><td>${b.created ? new Date(b.created).toLocaleDateString() : '—'}</td></tr>`
-        )
-        .join('');
+
+      count.textContent = `${result.resources.length} ${label}${result.resources.length !== 1 ? 's' : ''}`;
+      tbody.innerHTML = result.resources.map((r) => `
+        <tr>
+          <td style="font-family:monospace;font-size:12px">${r.name}</td>
+          <td style="color:var(--text-muted);font-size:12px">${r.meta}</td>
+          <td>
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-sm rl-copy-btn" data-arn="${r.arn}" title="${r.arn}">Copy ARN</button>
+              <button class="btn btn-sm rl-scratchpad-btn" data-arn="${r.arn}" data-label="${r.name}">→ Scratchpad</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      // Bind copy buttons
+      tbody.querySelectorAll('.rl-copy-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          navigator.clipboard.writeText(btn.dataset.arn);
+          const orig = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = orig; }, 1500);
+        });
+      });
+
+      // Bind scratchpad buttons
+      tbody.querySelectorAll('.rl-scratchpad-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const orig = btn.textContent;
+          try {
+            const res = await window.aws.invoke('arn-scratchpad:add', { arn: btn.dataset.arn, label: btn.dataset.label });
+            btn.textContent = res.ok ? 'Added ✓' : `Error: ${res.error || 'unknown'}`;
+            if (res.ok && window._arnScratchpadRefresh) window._arnScratchpadRefresh();
+          } catch (err) {
+            btn.textContent = `Error: ${err.message}`;
+          }
+          setTimeout(() => { btn.textContent = orig; }, 2000);
+        });
+      });
+    }
+
+    // Type selector buttons
+    section.querySelectorAll('.rl-type-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        section.querySelectorAll('.rl-type-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadResourceType(btn.dataset.type);
+      });
     });
+
+    // Auto-load S3 on first open
+    loadResourceType('s3');
   }
 
   if (feature.id === 'arn-scratchpad') {
     bindArnScratchpad(section);
+  }
+
+  if (feature.id === 'route53') {
+    bindRoute53(section);
+  }
+
+  if (feature.id === 'timestamp-converter') {
+    bindTimestampConverter(section);
   }
 }
 
@@ -676,7 +842,206 @@ function bindArnScratchpad(section) {
     }
   });
 
+  // Expose refresh so the resource lister can trigger a reload after adding
+  window._arnScratchpadRefresh = loadAndRender;
+
   loadAndRender();
+}
+
+/* ── Timestamp Converter ─────────────────────────────────────────────────── */
+function bindTimestampConverter(section) {
+  const input   = section.querySelector('#ts-input');
+  const errEl   = section.querySelector('#ts-error');
+  const results = section.querySelector('#ts-results');
+  const clearBtn = section.querySelector('#ts-clear');
+  const nowBtn   = section.querySelector('#ts-now');
+
+  function relativeTime(date) {
+    const diff = Date.now() - date.getTime();
+    const abs  = Math.abs(diff);
+    const future = diff < 0;
+    const fmt = (n, unit) => `${n} ${unit}${n !== 1 ? 's' : ''} ${future ? 'from now' : 'ago'}`;
+    if (abs < 60_000)              return fmt(Math.round(abs / 1000), 'second');
+    if (abs < 3_600_000)           return fmt(Math.round(abs / 60_000), 'minute');
+    if (abs < 86_400_000)          return fmt(Math.round(abs / 3_600_000), 'hour');
+    if (abs < 30 * 86_400_000)     return fmt(Math.round(abs / 86_400_000), 'day');
+    if (abs < 365 * 86_400_000)    return fmt(Math.round(abs / (30 * 86_400_000)), 'month');
+    return fmt(Math.round(abs / (365 * 86_400_000)), 'year');
+  }
+
+  function convert(raw) {
+    const trimmed = raw.trim();
+    if (!trimmed) { results.classList.add('hidden'); errEl.classList.add('hidden'); return; }
+
+    let date;
+    // Unix timestamp (seconds or ms)
+    if (/^\d{10}$/.test(trimmed))       date = new Date(parseInt(trimmed, 10) * 1000);
+    else if (/^\d{13}$/.test(trimmed))  date = new Date(parseInt(trimmed, 10));
+    else                                date = new Date(trimmed);
+
+    if (isNaN(date.getTime())) {
+      results.classList.add('hidden');
+      errEl.textContent = 'Could not parse timestamp. Try ISO 8601 or a Unix timestamp.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+
+    errEl.classList.add('hidden');
+    results.classList.remove('hidden');
+
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const localStr = date.toLocaleString(undefined, {
+      weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      timeZoneName: 'short',
+    });
+    const utcStr = date.toLocaleString(undefined, {
+      weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+      timeZone: 'UTC', timeZoneName: 'short',
+    });
+
+    section.querySelector('#ts-local').textContent    = localStr;
+    section.querySelector('#ts-utc').textContent      = utcStr;
+    section.querySelector('#ts-iso').textContent      = date.toISOString();
+    section.querySelector('#ts-unix').textContent     = Math.floor(date.getTime() / 1000).toString();
+    section.querySelector('#ts-unix-ms').textContent  = date.getTime().toString();
+    section.querySelector('#ts-relative').textContent = relativeTime(date);
+    section.querySelector('#ts-tz').textContent       = tz;
+  }
+
+  input.addEventListener('input', () => convert(input.value));
+
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    results.classList.add('hidden');
+    errEl.classList.add('hidden');
+    input.focus();
+  });
+
+  nowBtn.addEventListener('click', () => {
+    input.value = new Date().toISOString();
+    convert(input.value);
+  });
+
+  // Copy buttons
+  section.querySelectorAll('.ts-copy-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const val = btn.previousElementSibling.textContent;
+      navigator.clipboard.writeText(val);
+      const orig = btn.textContent;
+      btn.textContent = '✓';
+      setTimeout(() => { btn.textContent = orig; }, 1500);
+    });
+  });
+
+  // Auto-convert if clipboard has a timestamp on focus
+  input.addEventListener('focus', async () => {
+    if (input.value) return;
+    try {
+      const text = await navigator.clipboard.readText();
+      if (/^\d{10,13}$/.test(text.trim()) || /\d{4}-\d{2}-\d{2}T/.test(text)) {
+        input.value = text.trim();
+        convert(input.value);
+      }
+    } catch {}
+  });
+}
+
+/* ── Route53 ─────────────────────────────────────────────────────────────── */
+function bindRoute53(section) {
+  const zonesList   = section.querySelector('#r53-zones-list');
+  const recordsList = section.querySelector('#r53-records-list');
+  const zoneTitle   = section.querySelector('#r53-zone-title');
+  const recordCount = section.querySelector('#r53-record-count');
+  const refreshBtn  = section.querySelector('#r53-refresh-zones');
+
+  async function loadZones() {
+    zonesList.innerHTML = '<div class="r53-loading"><div class="spinner" style="margin:0 auto"></div></div>';
+    const result = await window.aws.invoke('route53:list-zones');
+    if (!result.ok) {
+      zonesList.innerHTML = `<div class="r53-empty" style="color:var(--error)">${result.error}</div>`;
+      return;
+    }
+    if (!result.zones.length) {
+      zonesList.innerHTML = '<div class="r53-empty">No hosted zones found.</div>';
+      return;
+    }
+    zonesList.innerHTML = result.zones.map((z) => `
+      <div class="r53-zone-row" data-id="${z.id}" title="${z.comment || z.name}">
+        <div class="r53-zone-name">${z.name}</div>
+        <div class="r53-zone-meta">
+          ${z.privateZone ? '<span class="r53-badge r53-private">Private</span>' : '<span class="r53-badge r53-public">Public</span>'}
+          <span class="r53-badge">${z.recordCount} records</span>
+        </div>
+      </div>
+    `).join('');
+
+    zonesList.querySelectorAll('.r53-zone-row').forEach((row) => {
+      row.addEventListener('click', () => {
+        zonesList.querySelectorAll('.r53-zone-row').forEach((r) => r.classList.remove('active'));
+        row.classList.add('active');
+        const zone = result.zones.find((z) => z.id === row.dataset.id);
+        loadRecords(row.dataset.id, zone?.name || row.dataset.id);
+      });
+    });
+  }
+
+  async function loadRecords(zoneId, zoneName) {
+    zoneTitle.textContent = zoneName;
+    recordCount.textContent = '';
+    recordsList.innerHTML = '<div class="r53-loading"><div class="spinner" style="margin:0 auto"></div></div>';
+
+    const result = await window.aws.invoke('route53:list-records', { zoneId });
+    if (!result.ok) {
+      recordsList.innerHTML = `<div class="r53-empty" style="color:var(--error)">${result.error}</div>`;
+      return;
+    }
+    if (!result.records.length) {
+      recordsList.innerHTML = '<div class="r53-empty">No records found.</div>';
+      return;
+    }
+
+    recordCount.textContent = `${result.records.length} record${result.records.length !== 1 ? 's' : ''}`;
+    recordsList.innerHTML = `
+      <table class="feature-table r53-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>TTL</th>
+            <th>Value(s)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${result.records.map((r) => {
+            const values = r.alias ? [`ALIAS → ${r.alias}`] : r.values;
+            return `
+              <tr>
+                <td class="r53-record-name" title="${escHtml(r.name)}">${escHtml(r.name)}</td>
+                <td><span class="r53-type-badge r53-type-${r.type.toLowerCase()}">${r.type}</span></td>
+                <td style="color:var(--text-muted)">${r.ttl !== null ? r.ttl : '—'}</td>
+                <td class="r53-values">${values.map((v) => `<div class="r53-value" title="${escHtml(v)}">${escHtml(v)}</div>`).join('')}</td>
+              </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+
+    // Click any value to copy it
+    recordsList.querySelectorAll('.r53-value').forEach((el) => {
+      el.addEventListener('click', () => {
+        navigator.clipboard.writeText(el.textContent.trim());
+        el.classList.add('copied');
+        const orig = el.title;
+        el.title = 'Copied!';
+        setTimeout(() => { el.classList.remove('copied'); el.title = orig; }, 1500);
+      });
+    });
+  }
+
+  refreshBtn.addEventListener('click', loadZones);
+  loadZones();
 }
 
 /* ── Lock screen ─────────────────────────────────────────────────────────── */

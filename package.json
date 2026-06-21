@@ -15,7 +15,17 @@
     "test": "jest"
   },
   "dependencies": {
+    "@aws-sdk/client-acm": "^3.600.0",
+    "@aws-sdk/client-auto-scaling": "^3.600.0",
+    "@aws-sdk/client-cloudfront": "^3.600.0",
     "@aws-sdk/client-cost-explorer": "^3.600.0",
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/client-ec2": "^3.600.0",
+    "@aws-sdk/client-elastic-load-balancing-v2": "^3.600.0",
+    "@aws-sdk/client-iam": "^3.600.0",
+    "@aws-sdk/client-rds": "^3.600.0",
+    "@aws-sdk/client-sns": "^3.600.0",
+    "@aws-sdk/client-route-53": "^3.600.0",
     "@aws-sdk/client-s3": "^3.600.0",
     "@aws-sdk/client-sso": "^3.600.0",
     "@aws-sdk/client-sso-oidc": "^3.600.0",

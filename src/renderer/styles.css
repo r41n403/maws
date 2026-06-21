@@ -186,12 +186,27 @@ body {
   -webkit-app-region: no-drag;
 }
 
-#nav-list,
+#nav-list {
+  list-style: none;
+  padding: 0 8px;
+  flex-shrink: 0; /* size to content — no scroll needed */
+  -webkit-app-region: no-drag;
+}
+
+#nav-section-label-system {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.8px;
+  padding: 10px 16px 4px;
+  margin-top: auto; /* push system section to the bottom */
+  -webkit-app-region: no-drag;
+}
+
 #nav-list-system {
   list-style: none;
   padding: 0 8px;
-  flex: 1;
-  overflow-y: auto;
+  flex-shrink: 0;
   -webkit-app-region: no-drag;
 }
 
@@ -649,6 +664,234 @@ body {
   font-size: 12px;
   border-radius: 6px;
 }
+
+/* Resource Lister type selector active state */
+.rl-type-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.rl-type-btn:hover { background: var(--surface-hover); }
+.rl-type-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ── Timestamp Converter ─────────────────────────────────────────────────── */
+#ts-converter {
+  max-width: 680px;
+}
+
+#ts-input-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+#ts-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+#ts-input:focus { border-color: var(--accent); }
+
+#ts-error {
+  color: var(--error);
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+#ts-results {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.ts-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.ts-row:last-child { border-bottom: none; }
+
+.ts-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.4px;
+  width: 130px;
+  flex-shrink: 0;
+}
+
+.ts-value {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.ts-copy-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 3px 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.1s, color 0.1s;
+}
+.ts-copy-btn:hover { background: var(--surface-hover); color: var(--text-primary); }
+
+/* ── Route53 view ────────────────────────────────────────────────────────── */
+#r53-layout {
+  display: flex;
+  gap: 12px;
+  height: calc(100vh - 160px);
+  min-height: 300px;
+}
+
+#r53-zones-panel {
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+#r53-records-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.r53-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+#r53-zones-list,
+#r53-records-list {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.r53-zone-row {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.r53-zone-row:hover  { background: var(--surface-hover); }
+.r53-zone-row.active { background: var(--accent); }
+.r53-zone-row.active .r53-zone-name { color: #fff; }
+.r53-zone-row.active .r53-zone-meta { opacity: 0.8; }
+.r53-zone-row.active .r53-badge { background: rgba(255,255,255,0.15); color: #fff; }
+
+.r53-zone-name {
+  font-size: 12px;
+  font-family: monospace;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.r53-zone-meta {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.r53-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--surface-hover);
+  color: var(--text-muted);
+}
+.r53-public  { background: rgba(52,199,89,0.15);  color: #34c759; }
+.r53-private { background: rgba(255,149,0,0.15);  color: #ff9500; }
+
+.r53-empty, .r53-loading {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.r53-table {
+  width: 100%;
+  table-layout: fixed;
+}
+.r53-table th:nth-child(1) { width: 30%; }
+.r53-table th:nth-child(2) { width: 70px; }
+.r53-table th:nth-child(3) { width: 60px; }
+.r53-table th:nth-child(4) { width: auto; }
+
+.r53-record-name {
+  font-family: monospace;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.r53-type-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+}
+.r53-type-a     { background: rgba(0,122,255,0.15);   color: #007aff; }
+.r53-type-aaaa  { background: rgba(0,122,255,0.15);   color: #007aff; }
+.r53-type-cname { background: rgba(88,86,214,0.15);   color: #9b59b6; }
+.r53-type-mx    { background: rgba(255,149,0,0.15);   color: #ff9500; }
+.r53-type-txt   { background: rgba(90,200,250,0.15);  color: #5ac8fa; }
+.r53-type-ns    { background: rgba(52,199,89,0.15);   color: #34c759; }
+.r53-type-soa   { background: rgba(142,142,147,0.15); color: #8e8e93; }
+
+.r53-values { font-size: 12px; }
+.r53-value {
+  font-family: monospace;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow-x: auto;
+  padding: 2px 4px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.r53-value:hover { background: var(--surface-hover); color: var(--text-primary); }
+.r53-value.copied { background: rgba(52,199,89,0.15); color: #34c759; }
 
 /* ── Audit Log view ──────────────────────────────────────────────────────── */
 #audit-filters {

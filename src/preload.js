@@ -25,7 +25,7 @@ contextBridge.exposeInMainWorld('aws', {
     const allowed = [
       'auth:', 'features:', 'health:', 'audit:', 'shell:',
       'billing:', 'util:', 'settings:', 'lock:',
-      'arn-scratchpad:', 'resource-lister:',
+      'arn-scratchpad:', 'resource-lister:', 'route53:',
     ];
     if (!allowed.some(p => channel.startsWith(p)))
       throw new Error(`Blocked IPC channel: ${channel}`);
