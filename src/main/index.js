@@ -37,7 +37,11 @@ app.on('second-instance', () => {
 
 function createWindow() {
   if (app.dock) {
-    app.dock.setIcon(path.join(__dirname, '../../assets/icon.png'));
+    try {
+      app.dock.setIcon(path.join(__dirname, '../../assets/icon.png'));
+    } catch (e) {
+      // icon not available in packaged build — safe to ignore
+    }
   }
 
   mainWindow = new BrowserWindow({
