@@ -18,6 +18,7 @@ mac:
   gatekeeperAssess: false
   entitlements: assets/entitlements.mac.plist
   entitlementsInherit: assets/entitlements.mac.plist
+  notarize: false
 
 dmg:
   title: "Maws ${version}"

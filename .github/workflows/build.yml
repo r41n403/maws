@@ -43,7 +43,27 @@ jobs:
         env:
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Notarize (tags only) ─────────────────────────────────────────────
+      - name: Notarize DMG
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          DMG=$(ls dist/*.dmg | head -1)
+          xcrun notarytool submit "$DMG" \
+            --key <(echo "$APPLE_API_KEY") \
+            --key-id "$APPLE_API_KEY_ID" \
+            --issuer "$APPLE_API_ISSUER" \
+            --team-id "5S2BM3ZKH5" \
+            --wait
+          xcrun stapler staple "$DMG"
+        env:
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
 
       # ── Upload artifact on every push to main (14-day test builds) ───────
       - name: Upload DMG artifact
