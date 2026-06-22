@@ -185,7 +185,7 @@ async function loadPublicIP() {
 /* ── Version ────────────────────────────────────────────────────────────── */
 function setVersionLabel() {
   const el = document.getElementById('version-label');
-  if (el) el.textContent = 'v0.1.0';
+  if (el) el.textContent = `v${window.aws.getAppVersion ? window.aws.getAppVersion() : ''}`.trim();
 
   const donateBtn = document.getElementById('donate-btn');
   if (donateBtn) {
