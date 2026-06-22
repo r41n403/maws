@@ -12,6 +12,14 @@ const settings = require('./settings');
 
 const isDev = process.argv.includes('--dev');
 
+app.setName('MAWS');
+app.setAboutPanelOptions({
+  applicationName:    'MAWS',
+  applicationVersion: app.getVersion(),
+  copyright:          'MIT License',
+  website:            'https://github.com/r41n403/maws',
+});
+
 // Enforce single instance — focus existing window if already running
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -28,11 +36,16 @@ app.on('second-instance', () => {
 });
 
 function createWindow() {
+  if (app.dock) {
+    app.dock.setIcon(path.join(__dirname, '../../assets/icon.png'));
+  }
+
   mainWindow = new BrowserWindow({
     width: 1100,
     height: 740,
     minWidth: 800,
     minHeight: 600,
+    icon: path.join(__dirname, '../../assets/icon.png'),
     titleBarStyle: 'hiddenInset',
     vibrancy: 'under-window',
     visualEffectState: 'active',
