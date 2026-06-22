@@ -1,6 +1,7 @@
 {
   "name": "maws",
-  "version": "0.1.0",
+  "productName": "MAWS",
+  "version": "0.2.0",
   "description": "Maws — modular macOS toolkit for AWS architects",
   "main": "src/main/index.js",
   "author": "r41n403",
@@ -8,7 +9,7 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "postinstall": "electron-builder install-app-deps && node node_modules/electron/install.js",
+    "postinstall": "electron-builder install-app-deps && node node_modules/electron/install.js && bash scripts/patch-electron-name.sh",
 
     "build": "electron-builder --mac dmg",
     "build:dir": "electron-builder --mac dir",
