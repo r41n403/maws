@@ -18,6 +18,8 @@ mac:
   gatekeeperAssess: false
   entitlements: assets/entitlements.mac.plist
   entitlementsInherit: assets/entitlements.mac.plist
+  notarize:
+    teamId: 5S2BM3ZKH5
 
 dmg:
   title: "Maws ${version}"
