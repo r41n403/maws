@@ -13,11 +13,11 @@ files:
 mac:
   category: public.app-category.developer-tools
   icon: assets/icon.icns
-  # No code signing — personal use only.
-  # Users: right-click the app → Open to bypass Gatekeeper on first run.
-  identity: null
-  hardenedRuntime: false
+  identity: "Developer ID Application"
+  hardenedRuntime: true
   gatekeeperAssess: false
+  entitlements: assets/entitlements.mac.plist
+  entitlementsInherit: assets/entitlements.mac.plist
 
 dmg:
   title: "Maws ${version}"
