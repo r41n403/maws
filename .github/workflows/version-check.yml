@@ -1,0 +1,44 @@
+name: Version Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  version-bumped:
+    name: Require version bump
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # need full history to compare
+
+      - name: Get PR version
+        id: pr
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Get main version
+        id: main
+        run: |
+          git fetch origin main --depth=1
+          git show origin/main:package.json > /tmp/main-package.json
+          echo "version=$(node -p "require('/tmp/main-package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Compare versions
+        run: |
+          PR="${{ steps.pr.outputs.version }}"
+          MAIN="${{ steps.main.outputs.version }}"
+          echo "main: $MAIN  →  pr: $PR"
+          if [ "$PR" = "$MAIN" ]; then
+            echo "❌ package.json version ($PR) was not incremented. Bump the version before merging."
+            exit 1
+          fi
+          # Ensure PR version is strictly greater using Node semver comparison
+          node -e "
+            const [a, b] = ['$MAIN', '$PR'].map(v => v.split('.').map(Number));
+            const gt = a[0] !== b[0] ? b[0] > a[0] : a[1] !== b[1] ? b[1] > a[1] : b[2] > a[2];
+            if (!gt) { console.error('❌ PR version (' + '$PR' + ') must be greater than main (' + '$MAIN' + ').'); process.exit(1); }
+            console.log('✅ Version bumped: $MAIN → $PR');
+          "
