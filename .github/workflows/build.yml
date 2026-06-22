@@ -36,8 +36,6 @@ jobs:
         run: npm test
 
       # ── Build DMG ────────────────────────────────────────────────────────
-      # No code signing — personal use only.
-      # First launch: right-click the .app → Open to bypass Gatekeeper.
       - name: Build DMG
         run: npm run build
         env:
