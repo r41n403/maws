@@ -1,7 +1,7 @@
 # ☁️ Maws
 
 **A modular macOS desktop app for AWS power users.**  
-Authenticate once via SSO or IAM profile, then access the AWS Console, CloudShell, cost tracking, ARN scratchpad, and more — all from one native window.
+Authenticate once via SSO or IAM profile, then access the AWS Console, CloudShell, cost tracking, ARN scratchpad, resource browser, Route53, and more — all from one native window.
 
 ![Build](https://github.com/r41n403/maws/actions/workflows/build.yml/badge.svg)
 ![Platform](https://img.shields.io/badge/platform-macOS-lightgrey)
@@ -12,18 +12,33 @@ Authenticate once via SSO or IAM profile, then access the AWS Console, CloudShel
 ## Screenshots
 
 <p align="center">
-  <img src="assets/screenshots/auth.png" width="780" alt="Authentication screen" />
-  <br/><em>SSO login with IAM Identity Center — no long-lived credentials</em>
+  <img src="assets/screenshots/dashboard.png" width="780" alt="Dashboard" />
+  <br/><em>Dashboard — account info, auth method, and month-to-date cost at a glance</em>
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/dashboard.png" width="780" alt="Dashboard" />
-  <br/><em>Dashboard — account info, identity ARN, and month-to-date cost</em>
+  <img src="assets/screenshots/resource-lister.png" width="780" alt="Resource Lister" />
+  <br/><em>Resource Lister — browse S3, EC2, RDS, ALBs, Auto Scaling, CloudFront, DynamoDB, SNS, IAM Roles, Security Groups, VPCs, and ACM Certs</em>
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/route53.png" width="780" alt="Route53" />
+  <br/><em>Route53 — view hosted zones and DNS records</em>
 </p>
 
 <p align="center">
   <img src="assets/screenshots/arn-scratchpad.png" width="780" alt="ARN Scratchpad" />
   <br/><em>ARN Scratchpad — save, label, and one-click copy frequently used ARNs</em>
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/timestamp-converter.png" width="780" alt="Timestamp Converter" />
+  <br/><em>Timestamp Converter — convert between Unix timestamps, ISO 8601, and human-readable formats</em>
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/settings.png" width="780" alt="Settings" />
+  <br/><em>Settings — Touch ID or password app lock with configurable auto-lock timeout</em>
 </p>
 
 ---
@@ -38,6 +53,9 @@ Authenticate once via SSO or IAM profile, then access the AWS Console, CloudShel
 - **Embedded CloudShell** — terminal in the same authenticated session
 - **Month-to-date cost** — live Cost Explorer display on the dashboard
 - **ARN Scratchpad** — save, label, and one-click copy frequently used ARNs
+- **Resource Lister** — browse 12 resource types: S3, EC2, RDS, ALBs, Auto Scaling, CloudFront, DynamoDB, SNS, IAM Roles, Security Groups, VPCs, ACM Certs
+- **Route53** — view hosted zones and drill into DNS records
+- **Timestamp Converter** — convert Unix timestamps and ISO 8601 dates instantly
 - **Public IP display** — your current IP, click to copy
 - **Audit log** — JSONL record of all auth events, exportable as CSV or JSON
 - **Modular feature system** — drop a folder in `src/features/` and it appears in the sidebar automatically
@@ -51,13 +69,9 @@ Authenticate once via SSO or IAM profile, then access the AWS Console, CloudShel
 1. Go to [**Releases**](https://github.com/r41n403/maws/releases)
 2. Download the latest `Maws-x.x.x-arm64.dmg`
 3. Open the DMG and drag Maws to Applications
-4. Run this once in Terminal to clear the quarantine flag:
-   ```bash
-   xattr -cr /Applications/Maws.app
-   ```
-5. Open Maws normally
+4. Open Maws normally
 
-> macOS shows "damaged and can't be opened" for unsigned apps downloaded from the internet. The app is fine — the command above removes the quarantine attribute. You can verify the source code yourself before running it.
+The app is code-signed and notarized by Apple — no security exceptions needed.
 
 ### Build from source
 
@@ -100,12 +114,12 @@ Maws makes direct API calls to AWS endpoints only. There is no telemetry, no ana
 # 1. Bump version in package.json
 # 2. Commit and tag
 git add package.json
-git commit -m "chore: bump to v0.2.0"
-git tag v0.2.0
+git commit -m "chore: bump to v0.3.0"
+git tag v0.3.0
 git push origin main --tags
 ```
 
-GitHub Actions builds the DMG on a macOS runner and publishes it as a GitHub Release automatically. Every push to `main` also uploads a DMG artifact (kept 14 days) so you can test builds without tagging.
+GitHub Actions builds the DMG on a macOS runner, code-signs it with a Developer ID certificate, and notarizes it with Apple. The signed DMG is published as a GitHub Release automatically. Every push to `main` also uploads a DMG artifact (kept 14 days) for testing builds without tagging.
 
 ---
 
@@ -195,9 +209,11 @@ The credential provider always returns fresh credentials — SSO tokens refresh 
 maws/
 ├── .github/
 │   └── workflows/
-│       └── build.yml          # CI: build DMG on push, release on tag
+│       └── build.yml          # CI: build + sign + notarize DMG on push/tag
 ├── assets/
-│   └── icon.icns              # App icon
+│   ├── icon.icns              # App icon
+│   ├── entitlements.mac.plist # Hardened runtime entitlements
+│   └── screenshots/           # README screenshots
 ├── src/
 │   ├── main/
 │   │   ├── index.js           # Electron main process + IPC handlers
@@ -209,13 +225,16 @@ maws/
 │   │   └── feature-registry.js # Auto-loads src/features/*/index.js
 │   ├── features/
 │   │   ├── arn-scratchpad/    # ARN save/copy/label feature
+│   │   ├── resource-lister/   # Browse 12 AWS resource types
+│   │   ├── route53/           # Hosted zones and DNS records
+│   │   ├── timestamp-converter/ # Unix/ISO timestamp conversion
 │   │   └── example-resource-lister/  # Template — copy to add features
 │   ├── renderer/
 │   │   ├── index.html         # App shell
 │   │   ├── app.js             # UI logic, navigation, feature views
 │   │   └── styles.css         # Dark-mode UI styles
 │   └── preload.js             # Secure contextBridge (window.aws.*)
-├── electron-builder.yml       # DMG packaging config
+├── electron-builder.yml       # DMG packaging + code signing config
 └── package.json
 ```
 
