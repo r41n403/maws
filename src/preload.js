@@ -42,6 +42,9 @@ contextBridge.exposeInMainWorld('aws', {
   auditExportCSV: () => ipcRenderer.invoke('audit:export-csv'),
   auditGetInfo: () => ipcRenderer.invoke('audit:get-info'),
 
+  // App info
+  getAppVersion: () => ipcRenderer.sendSync('util:get-version'),
+
   // Shell
   openExternal: (url) => ipcRenderer.invoke('shell:open-external', url),
 });

@@ -244,6 +244,10 @@ ipcMain.handle('billing:get-current-month-cost', async () => {
   }
 });
 
+ipcMain.on('util:get-version', (event) => {
+  event.returnValue = app.getVersion();
+});
+
 ipcMain.handle('util:get-public-ip', async () => {
   return new Promise((resolve) => {
     const https = require('https');
