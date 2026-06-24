@@ -47,17 +47,25 @@ Authenticate once via SSO or IAM profile, then access the AWS Console, CloudShel
 
 - **SSO login** via AWS IAM Identity Center — no long-lived credentials stored
 - **Access key profiles** for IAM user credentials
+- **In-app profile setup** — create SSO or access key profiles directly in the app without manually editing `~/.aws/config`
 - **Session persistence** — survives relaunches; credentials stored in the macOS Keychain, never as plain text
+- **Session expiry overlay** — when an SSO token expires, a re-auth prompt appears without losing your place
 - **App lock** — Touch ID or password protection with configurable auto-lock timeout
 - **Embedded AWS Console** — federated browser session from your API credentials
 - **Embedded CloudShell** — terminal in the same authenticated session
 - **Month-to-date cost** — live Cost Explorer display on the dashboard
-- **ARN Scratchpad** — save, label, and one-click copy frequently used ARNs
-- **Resource Lister** — browse 12 resource types: S3, EC2, RDS, ALBs, Auto Scaling, CloudFront, DynamoDB, SNS, IAM Roles, Security Groups, VPCs, ACM Certs
-- **Route53** — view hosted zones and drill into DNS records
-- **Timestamp Converter** — convert Unix timestamps and ISO 8601 dates instantly
+- **ARN Scratchpad** — save, label, and one-click copy frequently used ARNs; auto-extracts ARNs pasted from longer text
+- **IP Scratchpad** — save, label, and copy IPv4 addresses, CIDRs, and IPv6 addresses; auto-classifies each entry (RFC1918, PUBLIC, CIDR, etc.)
+- **Resource Lister** — browse 12 resource types: S3, EC2, RDS, ALBs, Auto Scaling, CloudFront, DynamoDB, SNS, IAM Roles, Security Groups, VPCs, ACM Certs; one-click copy ARN or send to scratchpad
+- **Script Runner** — run prebaked or custom shell scripts against the authenticated account; AWS credentials are injected automatically as environment variables; Touch ID or password required before execution; scripts are categorized (security, cost-optimization, IAM, operations, danger) and support per-script parameter inputs; custom scripts have a version history with named snapshots
+- **CFN Templates** — deploy prebaked or custom CloudFormation templates; Touch ID or password required before deploying; a production-grade VPC template is included out of the box
+- **Route53** — view hosted zones and drill into DNS records; click any value to copy it
+- **Timestamp Converter** — convert Unix timestamps and ISO 8601 dates instantly; auto-converts clipboard content when the field is focused
+- **AWS Health indicator** — colored dot in the sidebar polls the AWS Service Health Dashboard every 10 minutes; hover to see active events and last-checked time
+- **UTC clock** — live date and time display in the sidebar
 - **Public IP display** — your current IP, click to copy
 - **Audit log** — JSONL record of all auth events, exportable as CSV or JSON
+- **Sidebar reordering** — click the lock icon to unlock the sidebar and drag items into any order; order is persisted between sessions
 - **Modular feature system** — drop a folder in `src/features/` and it appears in the sidebar automatically
 
 ---
@@ -98,6 +106,9 @@ Maws is designed to handle AWS credentials carefully:
 | IAM profile credentials | macOS Keychain (via `keytar`) |
 | App lock password | `~/Library/Application Support/maws/settings.json` (PBKDF2-hashed, 0o600) |
 | ARN scratchpad | `~/Library/Application Support/maws/arns.json` |
+| IP scratchpad | `~/Library/Application Support/maws/ips.json` |
+| Custom scripts | `~/Library/Application Support/maws/custom-scripts.json` |
+| Custom CFN templates | `~/Library/Application Support/maws/custom-cfn-templates.json` |
 | Audit log | `~/Library/Application Support/maws/audit.jsonl` |
 | AWS credentials files | `~/.aws/credentials` and `~/.aws/config` (standard AWS CLI locations) |
 
@@ -225,7 +236,10 @@ maws/
 │   │   └── feature-registry.js # Auto-loads src/features/*/index.js
 │   ├── features/
 │   │   ├── arn-scratchpad/    # ARN save/copy/label feature
+│   │   ├── ip-scratchpad/     # IP/CIDR save/copy/label feature
 │   │   ├── resource-lister/   # Browse 12 AWS resource types
+│   │   ├── script-runner/     # Prebaked + custom shell scripts with auth gate
+│   │   ├── cfn-templates/     # Prebaked + custom CloudFormation templates
 │   │   ├── route53/           # Hosted zones and DNS records
 │   │   ├── timestamp-converter/ # Unix/ISO timestamp conversion
 │   │   └── example-resource-lister/  # Template — copy to add features

@@ -8,11 +8,13 @@ const crypto = require('crypto');
 const SETTINGS_FILE = path.join(os.homedir(), 'Library', 'Application Support', 'maws', 'settings.json');
 
 const DEFAULTS = {
-  lockEnabled:  false,
-  lockMethod:   'touchid', // 'touchid' | 'password'
-  lockTimeout:  0,         // minutes; 0 = on launch only
-  passwordHash: null,
-  passwordSalt: null,
+  lockEnabled:        false,
+  lockMethod:         'touchid', // 'touchid' | 'password'
+  lockTimeout:        0,         // minutes; 0 = on launch only
+  passwordHash:       null,
+  passwordSalt:       null,
+  autoRefreshEnabled: false,
+  autoRefreshHours:   4,         // hours; max 10
 };
 
 function load() {

@@ -8,7 +8,8 @@ const featureRegistry = require('./feature-registry');
 const audit = require('./audit-logger');
 const health = require('./health-checker');
 const costChecker = require('./cost-checker');
-const settings = require('./settings');
+const settings       = require('./settings');
+const { validateImportBuffer } = require('./file-validator');
 
 const isDev = process.argv.includes('--dev');
 
@@ -17,7 +18,7 @@ app.setAboutPanelOptions({
   applicationName:    'MAWS',
   applicationVersion: app.getVersion(),
   copyright:          'MIT License',
-  website:            'https://github.com/r41n403/maws',
+  credits:            'Connor Maher — connor@cmitservices.com\nhttps://github.com/r41n403/maws',
 });
 
 // Enforce single instance — focus existing window if already running
@@ -88,6 +89,11 @@ app.on('web-contents-created', (_e, contents) => {
       shell.openExternal(url);
       return { action: 'deny' };
     });
+    // ERR_ABORTED (-3) is expected during OAuth redirects — one navigation
+    // supersedes another. Suppress it to avoid noisy console output.
+    contents.on('did-fail-load', (_e, errorCode) => {
+      if (errorCode === -3) return;
+    });
   }
   // Prevent the main window itself from navigating away from the local file
   if (contents.getType() === 'mainFrame') {
@@ -102,6 +108,13 @@ app.whenReady().then(async () => {
   createWindow();
   featureRegistry.loadAll(ipcMain);
   health.startPolling();
+
+  // Forward session-expired events from auth module to the renderer
+  awsAuth.authEvents.on('session-expired', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('auth:session-expired');
+    }
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -136,6 +149,10 @@ ipcMain.handle('auth:logout', async () => {
 
 ipcMain.handle('auth:get-session', async () => {
   return awsAuth.getSession();
+});
+
+ipcMain.handle('auth:refresh', async () => {
+  return awsAuth.refreshSession();
 });
 
 ipcMain.handle('auth:create-sso-profile', async (_event, opts) => {
@@ -189,11 +206,18 @@ ipcMain.handle('audit:get-info', async () => {
 ipcMain.handle('settings:get', async () => {
   const s = settings.load();
   // Never send hashes to renderer
-  return { lockEnabled: s.lockEnabled, lockMethod: s.lockMethod, lockTimeout: s.lockTimeout, hasPassword: !!s.passwordHash };
+  return {
+    lockEnabled:        s.lockEnabled,
+    lockMethod:         s.lockMethod,
+    lockTimeout:        s.lockTimeout,
+    hasPassword:        !!s.passwordHash,
+    autoRefreshEnabled: s.autoRefreshEnabled,
+    autoRefreshHours:   s.autoRefreshHours,
+  };
 });
 
 ipcMain.handle('settings:save', async (_event, patch) => {
-  const allowed = ['lockEnabled', 'lockMethod', 'lockTimeout'];
+  const allowed = ['lockEnabled', 'lockMethod', 'lockTimeout', 'autoRefreshEnabled', 'autoRefreshHours'];
   const safe = Object.fromEntries(Object.entries(patch).filter(([k]) => allowed.includes(k)));
   settings.save(safe);
   return { ok: true };
@@ -231,8 +255,69 @@ ipcMain.handle('settings:touchid-available', async () => {
 
 // ── Utility IPC ───────────────────────────────────────────────────────────────
 
+ipcMain.handle('util:import-file', async (_event, { filters, type }) => {
+  const { dialog } = require('electron');
+  const os  = require('os');
+  const fs  = require('fs');
+
+  // Hard limits — enforced in the main process, cannot be bypassed by the renderer
+  const MAX_BYTES = 512 * 1024; // 512 KB — well above any real script or CFN template
+
+  const picked = await dialog.showOpenDialog(mainWindow, {
+    title:       'Import File',
+    defaultPath: path.join(os.homedir(), 'Downloads'),
+    properties:  ['openFile'],
+    filters:     filters || [{ name: 'All Files', extensions: ['*'] }],
+  });
+  if (picked.canceled || !picked.filePaths.length) return { ok: false, canceled: true };
+
+  // Resolve the real path to block symlink traversal outside user-accessible dirs
+  const rawPath = picked.filePaths[0];
+  let filePath;
+  try {
+    filePath = fs.realpathSync(rawPath);
+  } catch {
+    filePath = rawPath; // realpathSync fails if file doesn't exist — shouldn't happen here
+  }
+
+  // ── 1. Size check (before reading into memory) ────────────────────────────
+  let stats;
+  try { stats = fs.statSync(filePath); } catch (e) {
+    return { ok: false, error: `Cannot access file: ${e.message}` };
+  }
+  if (!stats.isFile()) return { ok: false, error: 'Selected path is not a regular file.' };
+  if (stats.size === 0)  return { ok: false, error: 'File is empty.' };
+  if (stats.size > MAX_BYTES) {
+    const kb    = (stats.size  / 1024).toFixed(1);
+    const maxKb = (MAX_BYTES   / 1024).toFixed(0);
+    return { ok: false, error: `File is too large (${kb} KB). Maximum allowed size is ${maxKb} KB.` };
+  }
+
+  // ── 2. Read as raw buffer (no charset decoding yet) ───────────────────────
+  let buffer;
+  try { buffer = fs.readFileSync(filePath); } catch (e) {
+    return { ok: false, error: `Failed to read file: ${e.message}` };
+  }
+
+  // ── 3-6. Delegate content validation to the testable helper ──────────────
+  const validation = validateImportBuffer(buffer, type);
+  if (!validation.ok) return validation;
+
+  return { ok: true, content: validation.content, filePath };
+});
+
 ipcMain.handle('shell:open-external', async (_event, url) => {
   await shell.openExternal(url);
+});
+
+ipcMain.handle('shell:open-path', async (_event, filePath) => {
+  const err = await shell.openPath(filePath);
+  return err ? { ok: false, error: err } : { ok: true };
+});
+
+ipcMain.handle('shell:show-item-in-folder', (_event, filePath) => {
+  shell.showItemInFolder(filePath);
+  return { ok: true };
 });
 
 ipcMain.handle('billing:get-current-month-cost', async () => {
@@ -261,4 +346,51 @@ ipcMain.handle('util:get-public-ip', async () => {
       res.on('end', () => resolve({ ok: true, ip: data.trim() }));
     }).on('error', () => resolve({ ok: false, ip: null }));
   });
+});
+
+// Fetch authoritative time from Cloudflare (primary) or worldtimeapi.org (fallback).
+// Returns { ok, serverMs, localMs } so the renderer can compute an offset.
+ipcMain.handle('util:get-server-time', async () => {
+  const https = require('https');
+
+  function fetchCF() {
+    return new Promise((resolve, reject) => {
+      const req = https.get('https://1.1.1.1/cdn-cgi/trace', { timeout: 5000 }, (res) => {
+        let data = '';
+        res.on('data', c => data += c);
+        res.on('end', () => {
+          const match = data.match(/ts=([\d.]+)/);
+          if (match) resolve(Math.round(parseFloat(match[1]) * 1000));
+          else reject(new Error('ts field not found'));
+        });
+      });
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
+    });
+  }
+
+  function fetchWTA() {
+    return new Promise((resolve, reject) => {
+      const req = https.get('https://worldtimeapi.org/api/timezone/Etc/UTC', { timeout: 5000 }, (res) => {
+        let data = '';
+        res.on('data', c => data += c);
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(data);
+            resolve(json.unixtime * 1000);
+          } catch { reject(new Error('parse error')); }
+        });
+      });
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
+    });
+  }
+
+  const localMs = Date.now();
+  try {
+    const serverMs = await fetchCF().catch(() => fetchWTA());
+    return { ok: true, serverMs, localMs };
+  } catch (e) {
+    return { ok: false, serverMs: null, localMs, error: e.message };
+  }
 });

@@ -34,6 +34,16 @@ describe('settings.load', () => {
     expect(s.passwordSalt).toBeNull();
   });
 
+  it('returns autoRefreshEnabled default of false', () => {
+    const s = settings.load();
+    expect(s.autoRefreshEnabled).toBe(false);
+  });
+
+  it('returns autoRefreshHours default of 4', () => {
+    const s = settings.load();
+    expect(s.autoRefreshHours).toBe(4);
+  });
+
   it('merges saved values with defaults', () => {
     settings.save({ lockEnabled: true, lockTimeout: 15 });
     const s = settings.load();
@@ -66,6 +76,27 @@ describe('settings.setPassword / verifyPassword', () => {
 
   it('returns false when no password has been set', () => {
     expect(settings.verifyPassword('anything')).toBe(false);
+  });
+});
+
+describe('settings.save — auto-refresh', () => {
+  it('persists autoRefreshEnabled true', () => {
+    settings.save({ autoRefreshEnabled: true });
+    expect(settings.load().autoRefreshEnabled).toBe(true);
+  });
+
+  it('persists autoRefreshHours', () => {
+    settings.save({ autoRefreshHours: 8 });
+    expect(settings.load().autoRefreshHours).toBe(8);
+  });
+
+  it('does not lose other values when saving auto-refresh settings', () => {
+    settings.save({ lockEnabled: true });
+    settings.save({ autoRefreshEnabled: true, autoRefreshHours: 6 });
+    const s = settings.load();
+    expect(s.lockEnabled).toBe(true);
+    expect(s.autoRefreshEnabled).toBe(true);
+    expect(s.autoRefreshHours).toBe(6);
   });
 });
 
