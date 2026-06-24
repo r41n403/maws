@@ -19,10 +19,15 @@ const { STSClient, GetCallerIdentityCommand } = require('@aws-sdk/client-sts');
 const { SSOOIDCClient, RegisterClientCommand, StartDeviceAuthorizationCommand, CreateTokenCommand } = require('@aws-sdk/client-sso-oidc');
 const { SSOClient, GetRoleCredentialsCommand, ListAccountsCommand, ListAccountRolesCommand } = require('@aws-sdk/client-sso');
 const { fromIni } = require('@aws-sdk/credential-providers');
+const { EventEmitter } = require('events');
 const audit = require('./audit-logger');
 
+// Emits 'session-expired' when credentials expire while the app is running
+const authEvents = new EventEmitter();
+
 // In-memory session state
-let _session = null;
+let _session      = null;
+let _expiryTimer  = null;
 
 // Keychain identifiers
 const KC_SERVICE = 'maws';
@@ -108,6 +113,8 @@ async function restoreSession() {
       identityArn: data.identityArn,
       region:      data.region,
     };
+
+    _scheduleExpiryWarning(credentials.expiration);
 
     audit.log({
       category: 'auth',
@@ -299,6 +306,8 @@ async function loginSSO(profileName) {
     const identity = await _fetchIdentity(credentials);
     _session = { ..._session, ...identity };
 
+    _scheduleExpiryWarning(credentials.expiration);
+
     audit.log({
       category: 'auth',
       event: 'AUTH_LOGIN_SUCCESS',
@@ -336,6 +345,8 @@ async function loginProfile(profileName) {
 
     const identity = await _fetchIdentity(credentials);
     _session = { ..._session, ...identity };
+
+    _scheduleExpiryWarning(credentials.expiration);
 
     audit.log({
       category: 'auth',
@@ -404,13 +415,15 @@ async function getIdentity() {
 
 function getSession() {
   if (!_session) return null;
+  const exp = _session.credentials?.expiration;
   return {
-    profile: _session.profile,
-    method: _session.method,
-    accountId: _session.accountId,
-    userId: _session.userId,
+    profile:     _session.profile,
+    method:      _session.method,
+    accountId:   _session.accountId,
+    userId:      _session.userId,
     identityArn: _session.identityArn,
-    region: _session.region,
+    region:      _session.region,
+    expiration:  exp instanceof Date ? exp.toISOString() : (exp ?? null),
   };
 }
 
@@ -421,6 +434,45 @@ function getSession() {
  */
 function getCredentialProvider() {
   return _session?.provider ?? null;
+}
+
+/**
+ * Re-authenticates using the same profile and method as the current session.
+ * For SSO: re-runs the device-auth flow (opens browser).
+ * For profile: re-reads static credentials from ~/.aws/credentials.
+ * Returns the same shape as loginSSO / loginProfile.
+ */
+async function refreshSession() {
+  if (!_session) return { ok: false, error: 'No active session to refresh.' };
+  const { profile, method } = _session;
+  if (method === 'sso') {
+    return loginSSO(profile);
+  } else {
+    return loginProfile(profile);
+  }
+}
+
+/**
+ * Schedules an event 60 seconds before credentials expire so the renderer
+ * can prompt the user to re-authenticate before API calls start failing.
+ * Called whenever a session is established (login or restore).
+ */
+function _scheduleExpiryWarning(expiration) {
+  if (_expiryTimer) { clearTimeout(_expiryTimer); _expiryTimer = null; }
+  if (!expiration) return;
+
+  const msUntilExpiry  = new Date(expiration).getTime() - Date.now();
+  const msUntilWarning = msUntilExpiry - 60_000; // warn 60 s before
+
+  if (msUntilWarning <= 0) {
+    // Already expired or about to — fire immediately
+    setImmediate(() => authEvents.emit('session-expired'));
+    return;
+  }
+
+  _expiryTimer = setTimeout(() => {
+    authEvents.emit('session-expired');
+  }, msUntilWarning);
 }
 
 function getRegion() {
@@ -484,6 +536,7 @@ function logout() {
     result: 'info',
   });
   _session = null;
+  if (_expiryTimer) { clearTimeout(_expiryTimer); _expiryTimer = null; }
   _clearPersistedSession(); // fire-and-forget; async but non-critical
   return { ok: true };
 }
@@ -578,9 +631,11 @@ function createSSOProfile({ profileName, ssoStartUrl, ssoRegion, defaultRegion }
 }
 
 module.exports = {
+  authEvents,
   listProfiles,
   loginSSO,
   loginProfile,
+  refreshSession,
   getIdentity,
   getSession,
   getCredentialProvider,

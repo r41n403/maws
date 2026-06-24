@@ -38,6 +38,13 @@ yarn-error.log
 coverage/
 .nyc_output/
 
-# NOTE: All runtime data (session, settings, audit log, ARN scratchpad) is stored
-# in ~/Library/Application Support/maws/ — outside this repo, never committed.
+# Runtime data — stored in ~/Library/Application Support/maws/, outside this repo.
+# These patterns are listed explicitly as a safeguard in case anything ends up
+# relative to the project directory during local development.
+audit.log
+audit.jsonl
+custom-scripts.json
+script-versions.json
+script-logs/
+
 # AWS credentials live in ~/.aws/ — also outside this repo.

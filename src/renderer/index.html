@@ -25,6 +25,12 @@
           <span id="utc-time"></span>
           <span id="utc-label">UTC</span>
         </div>
+        <div id="utc-drift-warn" class="hidden"></div>
+        <div id="session-ttl-wrap" class="hidden">
+          <span id="session-ttl-icon">⏱</span>
+          <span id="session-ttl"></span>
+          <button id="session-refresh-btn" title="Refresh AWS session">↻</button>
+        </div>
         <div id="identity-badge" class="hidden">
           <div id="identity-account"></div>
           <div id="identity-role"></div>
@@ -32,7 +38,10 @@
         </div>
       </div>
 
-      <div id="nav-section-label">WORKSPACE</div>
+      <div id="nav-section-label">
+        <span>WORKSPACE</span>
+        <button id="nav-lock-btn" title="Unlock to reorder workspace items">🔒</button>
+      </div>
       <ul id="nav-list">
         <li class="nav-item active" data-view="auth">
           <span class="nav-icon">🔑</span>
@@ -257,6 +266,7 @@
             <strong id="audit-detail-event"></strong>
             <button id="audit-detail-close">✕</button>
           </div>
+          <div id="audit-detail-log-link" style="display:none"></div>
           <pre id="audit-detail-body"></pre>
         </div>
       </section>
@@ -285,6 +295,38 @@
       <!-- Settings view -->
       <section id="view-settings" class="view hidden">
         <div class="view-header"><h2>⚙️ Settings</h2></div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Session Auto-Refresh</div>
+
+          <div class="settings-row">
+            <div class="settings-row-label">
+              <span>Auto-refresh session</span>
+              <span class="settings-row-hint">Automatically re-authenticate before your AWS session expires</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="auto-refresh-toggle" />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+
+          <div id="auto-refresh-options" class="hidden">
+            <div class="settings-row">
+              <div class="settings-row-label">
+                <span>Refresh for up to</span>
+                <span class="settings-row-hint">Stop auto-refreshing after this much total session time</span>
+              </div>
+              <select id="auto-refresh-duration" class="settings-select">
+                <option value="1">1 hour</option>
+                <option value="2">2 hours</option>
+                <option value="4">4 hours</option>
+                <option value="6">6 hours</option>
+                <option value="8">8 hours</option>
+                <option value="10">10 hours</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
         <div class="settings-section">
           <div class="settings-section-title">App Lock</div>
@@ -382,6 +424,16 @@
         <button id="lock-submit-btn" class="btn btn-primary">Unlock</button>
       </div>
       <div id="lock-error" class="hidden error-box"></div>
+    </div>
+  </div>
+
+  <!-- Session-expired overlay -->
+  <div id="session-expired-overlay" style="display:none">
+    <div id="session-expired-modal">
+      <div id="session-expired-icon">🔒</div>
+      <h2>Session Expired</h2>
+      <p>Your AWS credentials have expired. Sign in again to continue.</p>
+      <button id="session-expired-reauth-btn">Sign in again</button>
     </div>
   </div>
 
