@@ -25,15 +25,18 @@ const costChecker   = require('../src/main/cost-checker');
 const settings      = require('../src/main/settings');
 
 // Views to capture: selector matches data-view attribute on .nav-item
+// Static views use data-view directly; feature views are prefixed with "feature-"
 const VIEWS = [
-  { click: '.nav-item[data-view="auth"]',                file: 'auth.png',                label: 'Authentication' },
-  { click: '.nav-item[data-view="dashboard"]',           file: 'dashboard.png',           label: 'Dashboard' },
-  { click: '.nav-item[data-view="arn-scratchpad"]',      file: 'arn-scratchpad.png',      label: 'ARN Scratchpad' },
-  { click: '.nav-item[data-view="resource-lister"]',     file: 'resource-lister.png',     label: 'Resource Lister' },
-  { click: '.nav-item[data-view="route53"]',             file: 'route53.png',             label: 'Route53' },
-  { click: '.nav-item[data-view="timestamp-converter"]', file: 'timestamp-converter.png', label: 'Timestamp Converter' },
-  { click: '.nav-item[data-view="audit"]',               file: 'audit-log.png',           label: 'Audit Log' },
-  { click: '.nav-item[data-view="settings"]',            file: 'settings.png',            label: 'Settings' },
+  { click: '.nav-item[data-view="auth"]',                        file: 'auth.png',                label: 'Authentication' },
+  { click: '.nav-item[data-view="home"]',                        file: 'dashboard.png',           label: 'Dashboard' },
+  { click: '.nav-item[data-view="feature-script-runner"]',       file: 'script-runner.png',       label: 'Script Runner' },
+  { click: '.nav-item[data-view="feature-cfn-templates"]',       file: 'cfn-templates.png',       label: 'CFN Templates' },
+  { click: '.nav-item[data-view="feature-resource-lister"]',     file: 'resource-lister.png',     label: 'Resource Lister' },
+  { click: '.nav-item[data-view="feature-route53"]',             file: 'route53.png',             label: 'Route53' },
+  { click: '.nav-item[data-view="feature-arn-scratchpad"]',      file: 'arn-scratchpad.png',      label: 'ARN Scratchpad' },
+  { click: '.nav-item[data-view="feature-timestamp-converter"]', file: 'timestamp-converter.png', label: 'Timestamp Converter' },
+  { click: '.nav-item[data-view="audit"]',                       file: 'audit-log.png',           label: 'Audit Log' },
+  { click: '.nav-item[data-view="settings"]',                    file: 'settings.png',            label: 'Settings' },
 ];
 
 // ── IPC handlers (same as src/main/index.js) ──────────────────────────────────
