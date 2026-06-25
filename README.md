@@ -17,6 +17,16 @@ Authenticate once via SSO or IAM profile, then access the AWS Console, CloudShel
 </p>
 
 <p align="center">
+  <img src="assets/screenshots/script-runner.png" width="780" alt="Script Runner" />
+  <br/><em>Script Runner — run prebaked or custom shell scripts with AWS credentials injected; Touch ID gated before execution</em>
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/cfn-templates.png" width="780" alt="CFN Templates" />
+  <br/><em>CFN Templates — deploy prebaked or custom CloudFormation templates; includes a production-grade VPC template out of the box</em>
+</p>
+
+<p align="center">
   <img src="assets/screenshots/resource-lister.png" width="780" alt="Resource Lister" />
   <br/><em>Resource Lister — browse S3, EC2, RDS, ALBs, Auto Scaling, CloudFront, DynamoDB, SNS, IAM Roles, Security Groups, VPCs, and ACM Certs</em>
 </p>
@@ -112,8 +122,7 @@ Maws is designed to handle AWS credentials carefully:
 | Audit log | `~/Library/Application Support/maws/audit.jsonl` |
 | AWS credentials files | `~/.aws/credentials` and `~/.aws/config` (standard AWS CLI locations) |
 
-**Nothing sensitive is written to the project directory or committed to git.**  
-The session was previously stored as a plain-text JSON file; it is now stored exclusively in the macOS Keychain. On first launch after upgrading, any legacy `session.json` is migrated automatically and then deleted.
+**Nothing sensitive is written to the project directory or committed to git.**
 
 Maws makes direct API calls to AWS endpoints only. There is no telemetry, no analytics, and no third-party data collection.
 

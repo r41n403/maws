@@ -44,7 +44,6 @@ You can expect an initial response within **48 hours** and a fix or mitigation p
 
 ### Known Limitations
 
-- **Unsigned binary** — Maws is not code-signed with an Apple Developer certificate. macOS Gatekeeper will quarantine it on first install; users must run `xattr -cr /Applications/Maws.app` or right-click → Open. This means macOS cannot verify the binary hasn't been tampered with after download. For high-security environments, build from source.
 - **No automatic updates** — there is no auto-update mechanism. Users must manually download new releases.
 - **Audit log is local only** — the audit log is not tamper-evident; a local attacker with file system access could modify it.
 
